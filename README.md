@@ -61,7 +61,7 @@ That is exactly what this repo is for.
 - `tools/activation-adapters/` — faucet / wallet / app-inference safe adapters for day-0 activation
 - `tools/day0-operations/` — evidence templates, decision trees, and packet generator for launch day
 - `tools/armed-runners/` — gated claim / wallet / docs runners for approved activation steps
-- `tools/change-capture/` — turn watcher changes into GitHub-visible update notes and publication drafts
+- `tools/change-capture/` — turn watcher changes into GitHub-visible update notes, drafts, and Technocore/GitHub publication actions
 - `LICENSE` — MIT license
 
 ## Included tooling
