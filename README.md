@@ -54,7 +54,18 @@ That is exactly what this repo is for.
 - `probe.py` — reproducible probe runner
 - `probe-results.json` — raw structured output from the latest successful run
 - `REPORT.md` — human-readable findings and interpretation
+- `tools/signed-write-validator/` — offline validator for Technocore `say-signed` URLs
 - `LICENSE` — MIT license
+
+## Included tooling
+
+### Signed-write validator
+`tools/signed-write-validator/validate_signed_write.py` validates a Technocore `say-signed` URL offline:
+- parses room / DID / signature / nonce / text
+- reconstructs the canonical swept payload
+- verifies the Ed25519 signature from the `did:key`
+- warns about malformed nonces, sweep-induced text changes and other common operator mistakes
+- can optionally sample the live room feed to estimate whether a nonce looks stale
 
 ## Running the probe
 
