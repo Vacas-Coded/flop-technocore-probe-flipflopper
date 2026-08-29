@@ -84,9 +84,7 @@ def run(cmd):
     return subprocess.run(cmd, capture_output=True, text=True, timeout=180)
 
 
-def load_state() -> dict:
-    if STATE_PATH.exists():
-        return json.loads(STATE_PATH.read_text())
+def default_state() -> dict:
     return {
         'posts': [],
         'by_update': {},
@@ -95,12 +93,27 @@ def load_state() -> dict:
         'last_success_by_room_and_event': {},
         'last_attempt_by_update': {},
         'last_attempt_by_message_hash': {},
+        'pending_publications': {},
     }
+
+
+def normalize_state(state: dict | None) -> dict:
+    base = default_state()
+    state = state or {}
+    for key, value in base.items():
+        state.setdefault(key, value if not isinstance(value, dict) else dict(value))
+    return state
+
+
+def load_state() -> dict:
+    if STATE_PATH.exists():
+        return normalize_state(json.loads(STATE_PATH.read_text()))
+    return default_state()
 
 
 def save_state(state: dict):
     STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    STATE_PATH.write_text(json.dumps(state, indent=2, ensure_ascii=False) + '\n')
+    STATE_PATH.write_text(json.dumps(normalize_state(state), indent=2, ensure_ascii=False) + '\n')
 
 
 def iso_now() -> str:
@@ -254,21 +267,85 @@ def make_log_path(update_path: pathlib.Path, room: str) -> pathlib.Path:
     return LOG_DIR / f'{stamp_now()}_{update_path.stem}_{room}.json'
 
 
-def main():
-    ap = argparse.ArgumentParser(description='Push repo docs and publish a Technocore post for a verified update')
-    ap.add_argument('update_path')
-    ap.add_argument('--room', default=DEFAULT_ROOM)
-    ap.add_argument('--skip-github-push', action='store_true')
-    ap.add_argument('--force', action='store_true')
-    ap.add_argument('--cooldown-minutes', type=int)
-    ap.add_argument('--event-type', default='')
-    args = ap.parse_args()
+def pending_key(room: str, update_path: pathlib.Path | str) -> str:
+    return f'{room}::{update_path}'
 
-    update_path = pathlib.Path(args.update_path)
-    if not update_path.exists():
-        print(f'missing update path: {update_path}', file=sys.stderr)
-        raise SystemExit(2)
 
+def resolve_pending_eligible_at(details: dict) -> str | None:
+    candidates = [parse_iso(details.get('cooldown_allows_at')), parse_iso(details.get('same_event_allows_at'))]
+    candidates = [c for c in candidates if c]
+    if not candidates:
+        return None
+    return max(candidates).isoformat()
+
+
+def is_retryable_cooldown_block(blockers: list[str]) -> bool:
+    if not blockers:
+        return False
+    allowed = {'room_cooldown_active', 'same_event_cooldown_active'}
+    return set(blockers).issubset(allowed)
+
+
+def upsert_pending_publication(state: dict, room: str, event_type: str, update_path: pathlib.Path, score: dict, guardrails: dict, log_path: pathlib.Path):
+    blockers = guardrails.get('blockers') or []
+    if not is_retryable_cooldown_block(blockers):
+        return None
+    details = guardrails.get('details') or {}
+    now = iso_now()
+    key = pending_key(room, update_path)
+    pending = state.setdefault('pending_publications', {})
+    existing = pending.get(key) or {}
+    record = {
+        'room': room,
+        'event_type': event_type,
+        'update_path': str(update_path),
+        'queued_at': existing.get('queued_at') or now,
+        'updated_at': now,
+        'eligible_at': resolve_pending_eligible_at(details),
+        'score': score.get('total_score'),
+        'recommendation': score.get('recommendation'),
+        'blockers': blockers,
+        'reason': ','.join(blockers),
+        'cooldown_policy': {
+            'cooldown_minutes': details.get('cooldown_minutes'),
+            'same_event_cooldown_minutes': details.get('same_event_cooldown_minutes'),
+        },
+        'log_path': str(log_path),
+    }
+    pending[key] = record
+    save_state(state)
+    return record
+
+
+def remove_pending_publication(state: dict, room: str, update_path: pathlib.Path):
+    pending = state.setdefault('pending_publications', {})
+    pending.pop(pending_key(room, update_path), None)
+
+
+def select_pending_publication(state: dict, room: str | None = None, now: datetime | None = None) -> dict | None:
+    now = now or datetime.now(timezone.utc)
+    pending = list((state.get('pending_publications') or {}).values())
+    if room:
+        pending = [item for item in pending if item.get('room') == room]
+    eligible = []
+    for item in pending:
+        eligible_at = parse_iso(item.get('eligible_at'))
+        if eligible_at and eligible_at > now:
+            continue
+        eligible.append(item)
+    if not eligible:
+        return None
+    eligible.sort(
+        key=lambda item: (
+            parse_iso(item.get('eligible_at')) or datetime.fromtimestamp(0, tz=timezone.utc),
+            item.get('score') or 0,
+            item.get('queued_at') or '',
+        )
+    )
+    return eligible[0]
+
+
+def publish_once(update_path: pathlib.Path, room: str, event_type: str, skip_github_push: bool, force: bool, cooldown_minutes: int | None = None) -> pathlib.Path:
     data = parse_update(update_path)
     s = run(['python', str(SCORE), str(update_path)])
     if s.returncode != 0:
@@ -276,15 +353,14 @@ def main():
         print(s.stderr, file=sys.stderr)
         raise SystemExit(s.returncode)
     score = json.loads(s.stdout)
-    event_type = derive_event_type(data.get('source_id') or '', args.event_type or None)
-    cooldown = resolve_cooldown_minutes(event_type, score, args.cooldown_minutes)
+    cooldown = resolve_cooldown_minutes(event_type, score, cooldown_minutes)
     post = build_post(data, score)
     state = load_state()
-    guardrails = evaluate_publish_guardrails(state, args.room, event_type, update_path, post, cooldown['resolved_cooldown_minutes'])
+    guardrails = evaluate_publish_guardrails(state, room, event_type, update_path, post, cooldown['resolved_cooldown_minutes'])
     results = {
         'attempt_at': iso_now(),
         'update_path': str(update_path),
-        'room': args.room,
+        'room': room,
         'event_type': event_type,
         'cooldown_policy': cooldown,
         'score': score,
@@ -292,45 +368,51 @@ def main():
         'github_pushed': None,
         'technocore_posted': None,
         'message': post,
+        'pending_publication': None,
     }
     msg_hash = guardrails['details']['message_hash']
 
-    if score.get('recommendation') != 'autopublish' and not args.force:
-        log = make_log_path(update_path, args.room)
+    if score.get('recommendation') != 'autopublish' and not force:
+        log = make_log_path(update_path, room)
         results['technocore_posted'] = {'skipped': True, 'reason': f"recommendation={score.get('recommendation')} score={score.get('total_score')}"}
         log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
-        record_attempt(state, args.room, event_type, update_path, msg_hash, 'skipped_score', {'reason': results['technocore_posted']['reason'], 'log_path': str(log)})
+        remove_pending_publication(state, room, update_path)
+        record_attempt(state, room, event_type, update_path, msg_hash, 'skipped_score', {'reason': results['technocore_posted']['reason'], 'log_path': str(log)})
         print(str(log))
-        return
+        return log
 
-    if not guardrails['allowed'] and not args.force:
-        log = make_log_path(update_path, args.room)
+    if not guardrails['allowed'] and not force:
+        log = make_log_path(update_path, room)
         results['technocore_posted'] = {'skipped': True, 'reason': ','.join(guardrails['blockers'])}
         log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
-        record_attempt(state, args.room, event_type, update_path, msg_hash, 'skipped_guardrails', {'reason': results['technocore_posted']['reason'], 'log_path': str(log)})
+        pending = upsert_pending_publication(state, room, event_type, update_path, score, guardrails, log)
+        if pending:
+            results['pending_publication'] = pending
+            log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
+        record_attempt(state, room, event_type, update_path, msg_hash, 'skipped_guardrails', {'reason': results['technocore_posted']['reason'], 'log_path': str(log)})
         print(str(log))
-        return
+        return log
 
-    if not args.skip_github_push:
+    if not skip_github_push:
         p = run(['python', str(PUSH)])
         results['github_pushed'] = {'returncode': p.returncode, 'stdout': p.stdout.strip(), 'stderr': p.stderr.strip()}
         if p.returncode != 0 and 'nothing_to_push' not in p.stdout:
-            record_attempt(state, args.room, event_type, update_path, msg_hash, 'failed_github_push', {'stdout': p.stdout.strip(), 'stderr': p.stderr.strip()})
+            record_attempt(state, room, event_type, update_path, msg_hash, 'failed_github_push', {'stdout': p.stdout.strip(), 'stderr': p.stderr.strip()})
             print(p.stdout)
             print(p.stderr, file=sys.stderr)
             raise SystemExit(p.returncode)
 
-    t = run(['python', str(AGENT), 'checkin', '--room', args.room, '--message', post])
+    t = run(['python', str(AGENT), 'checkin', '--room', room, '--message', post])
     results['technocore_posted'] = {'returncode': t.returncode, 'stdout': t.stdout.strip(), 'stderr': t.stderr.strip()}
     if t.returncode != 0:
-        record_attempt(state, args.room, event_type, update_path, msg_hash, 'failed_agent_command', {'stdout': t.stdout.strip(), 'stderr': t.stderr.strip()})
+        record_attempt(state, room, event_type, update_path, msg_hash, 'failed_agent_command', {'stdout': t.stdout.strip(), 'stderr': t.stderr.strip()})
         print(t.stdout)
         print(t.stderr, file=sys.stderr)
         raise SystemExit(t.returncode)
     try:
         tech = json.loads(t.stdout)
     except json.JSONDecodeError:
-        record_attempt(state, args.room, event_type, update_path, msg_hash, 'failed_invalid_json', {'stdout': t.stdout.strip()[:2000]})
+        record_attempt(state, room, event_type, update_path, msg_hash, 'failed_invalid_json', {'stdout': t.stdout.strip()[:2000]})
         print(t.stdout)
         print('invalid technocore publish response json', file=sys.stderr)
         raise SystemExit(3)
@@ -339,18 +421,59 @@ def main():
     verify_status = ((tech.get('verify') or {}).get('response') or [None])[0]
     results['technocore_posted']['post_status'] = post_status
     results['technocore_posted']['verify_status'] = verify_status
+    log = make_log_path(update_path, room)
     if post_status != 200 or verify_status != 200:
-        log = make_log_path(update_path, args.room)
         log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
-        record_attempt(state, args.room, event_type, update_path, msg_hash, 'failed_technocore_confirmation', {'post_status': post_status, 'verify_status': verify_status, 'log_path': str(log)})
+        record_attempt(state, room, event_type, update_path, msg_hash, 'failed_technocore_confirmation', {'post_status': post_status, 'verify_status': verify_status, 'log_path': str(log)})
         print(t.stdout)
         print(f'technocore publish not confirmed: post_status={post_status} verify_status={verify_status}', file=sys.stderr)
         raise SystemExit(4)
 
-    log = make_log_path(update_path, args.room)
+    remove_pending_publication(state, room, update_path)
     log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
-    record_attempt(state, args.room, event_type, update_path, msg_hash, 'success', {'post_status': post_status, 'verify_status': verify_status, 'log_path': str(log)})
+    record_attempt(state, room, event_type, update_path, msg_hash, 'success', {'post_status': post_status, 'verify_status': verify_status, 'log_path': str(log)})
     print(str(log))
+    return log
+
+
+def retry_pending_publication(room: str, skip_github_push: bool, force: bool) -> pathlib.Path | None:
+    state = load_state()
+    item = select_pending_publication(state, room=room)
+    if not item:
+        print('no_retryable_pending_publications')
+        return None
+    update_path = pathlib.Path(item['update_path'])
+    event_type = item.get('event_type') or 'docs_change'
+    return publish_once(update_path, room, event_type, skip_github_push=skip_github_push, force=force)
+
+
+def main():
+    ap = argparse.ArgumentParser(description='Push repo docs and publish a Technocore post for a verified update')
+    ap.add_argument('update_path', nargs='?')
+    ap.add_argument('--room', default=DEFAULT_ROOM)
+    ap.add_argument('--skip-github-push', action='store_true')
+    ap.add_argument('--force', action='store_true')
+    ap.add_argument('--cooldown-minutes', type=int)
+    ap.add_argument('--event-type', default='')
+    ap.add_argument('--retry-pending', action='store_true', help='Retry the next queued publication whose cooldown has expired')
+    args = ap.parse_args()
+
+    if args.retry_pending:
+        retry_pending_publication(args.room, skip_github_push=args.skip_github_push, force=args.force)
+        return
+
+    if not args.update_path:
+        print('missing update path', file=sys.stderr)
+        raise SystemExit(2)
+
+    update_path = pathlib.Path(args.update_path)
+    if not update_path.exists():
+        print(f'missing update path: {update_path}', file=sys.stderr)
+        raise SystemExit(2)
+
+    source_id = parse_update(update_path).get('source_id') or ''
+    event_type = derive_event_type(source_id, args.event_type or None)
+    publish_once(update_path, args.room, event_type, skip_github_push=args.skip_github_push, force=args.force, cooldown_minutes=args.cooldown_minutes)
 
 
 if __name__ == '__main__':

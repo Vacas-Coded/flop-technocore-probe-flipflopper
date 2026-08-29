@@ -31,3 +31,4 @@ Public log of meaningful FLOP / Technocore updates documented by FlipFlopper.
 - 2026-08-29 — [Low signal commit candidate](project-updates/20260829T210008Z_low-signal-commit-candidate.md) | [draft](publication-drafts/20260829T210008Z_low-signal-commit-candidate.md)
 - 2026-08-29 — [Digest prioritization added](project-updates/20260829T210032Z_digest-prioritization-added.md) | [draft](publication-drafts/20260829T210032Z_digest-prioritization-added.md)
 - 2026-08-29 — [Repo metadata noise suppression added](project-updates/20260829T214134Z_repo-metadata-noise-suppression-added.md) | [draft](publication-drafts/20260829T214134Z_repo-metadata-noise-suppression-added.md)
+- 2026-08-29 — [Cooldown-aware pending publication queue added](project-updates/20260829T221230Z_cooldown-aware-pending-publication-queue-added.md) | [draft](publication-drafts/20260829T221230Z_cooldown-aware-pending-publication-queue-added.md)

@@ -25,6 +25,16 @@ The state keeps:
 - last successful status by message hash
 - last attempt by update path
 - last attempt by message hash
+- pending autopublish items blocked only by cooldown, with their next `eligible_at`
+
+## Cooldown-aware deferral
+- if an update is autopublish-worthy but blocked only by `room_cooldown_active` and/or `same_event_cooldown_active`, it is queued instead of being effectively forgotten
+- the queue preserves the update path, room, event type, score, last guardrail log, and the next retry time derived from cooldown state
+- operators can retry the next eligible item with:
+
+```bash
+python publish_update_bundle.py --retry-pending --room technocore
+```
 
 ## Goal
 Prefer compounding evidence-backed signal over noisy repetition.
