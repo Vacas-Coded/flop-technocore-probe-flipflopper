@@ -61,6 +61,7 @@ That is exactly what this repo is for.
 - `tools/activation-adapters/` — faucet / wallet / app-inference safe adapters for day-0 activation
 - `tools/day0-operations/` — evidence templates, decision trees, and packet generator for launch day
 - `tools/armed-runners/` — gated claim / wallet / docs runners for approved activation steps
+- `tools/change-capture/` — turn watcher changes into GitHub-visible update notes and publication drafts
 - `LICENSE` — MIT license
 
 ## Included tooling
@@ -120,6 +121,12 @@ That is exactly what this repo is for.
 - `wallet_connect_runner.py` blocks by default and only clears a manual-connect lane when preconditions pass
 - `docs_probe_runner.py` allows only GET-based probing when explicitly armed
 - `dispatch_armed_runner.py` routes to the correct gated runner
+
+### Change capture
+`tools/change-capture/` turns real watcher detections into reusable public artifacts:
+- `record_project_update.py` writes a repo-visible update note and a publication draft
+- `push_repo_updates.py` commits and pushes docs changes to GitHub when credentials are available
+- `docs/PROJECT_UPDATES.md` acts as the public index of meaningful updates
 
 ## Running the probe
 
