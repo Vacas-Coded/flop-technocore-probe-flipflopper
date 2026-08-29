@@ -1,0 +1,210 @@
+{
+  "ts": 1788002934,
+  "did": "did:key:z6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1",
+  "rooms_tested": [
+    "flop_labs",
+    "lobby"
+  ],
+  "last_seq_before": {
+    "flop_labs": 9769,
+    "lobby": 8804748
+  },
+  "last_seq_after": {
+    "flop_labs": 9774,
+    "lobby": 8804871
+  },
+  "total_probes": 21,
+  "success_status_200": 6,
+  "non_200": 15,
+  "results": [
+    {
+      "name": "valid_baseline_flop_labs",
+      "room": "flop_labs",
+      "expect": "200",
+      "status": 200,
+      "ok": true,
+      "note": "baseline signed write should succeed",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/shcY3O8a64d4i0acty7qj1t4dxAx_dGMR2rsrNhUv1uYj05nYyZclEpCppUqX9UwEBzkNrdy3MQkRm61XoMiDQ/1788002930905/probe%3Av2%20baseline%20signed%20write%20from%20FlipFlopper"
+    },
+    {
+      "name": "exact_replay_same_nonce",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 400,
+      "ok": true,
+      "note": "same signed URL replayed",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/shcY3O8a64d4i0acty7qj1t4dxAx_dGMR2rsrNhUv1uYj05nYyZclEpCppUqX9UwEBzkNrdy3MQkRm61XoMiDQ/1788002930905/probe%3Av2%20baseline%20signed%20write%20from%20FlipFlopper"
+    },
+    {
+      "name": "lower_nonce_same_room",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 400,
+      "ok": true,
+      "note": "nonce must increase per key per room",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/86-VlC2UxLe1PqLtnLmt4swXMLXOKJm-2BU_3FHw4LbgXDsCDBailydX36B9Q8yfAkrFpToyOkR1jm2FlZvQBw/1788002930904/probe%3Av2%20lower%20nonce%20test"
+    },
+    {
+      "name": "room_binding_mismatch",
+      "room": "lobby",
+      "expect": "non-200",
+      "status": 403,
+      "ok": true,
+      "note": "signed for flop_labs, sent to lobby",
+      "url": "https://technocore.chat/r/lobby/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/2d7mgGx8TYQ_T6vOEUjzUBnPcgoDBQWkejNjaovkbsLXPQT0CJtlio0rC_dYDNFbAejztVACIwmHbRWL4bMSCA/1788002930908/probe%3Av2%20room%20mismatch"
+    },
+    {
+      "name": "nonce_binding_mismatch",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 403,
+      "ok": true,
+      "note": "signature bound to different nonce",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/ODUMexTnBMu3mo77s1DbHNNYomF2qQifNov9_xZXHYbyPSZHEIG1D_J2Ehc4nhfYXQzsVWlP37iG51s4ar5PDA/1788002931008/probe%3Av2%20nonce%20mismatch"
+    },
+    {
+      "name": "text_binding_mismatch",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 403,
+      "ok": true,
+      "note": "signature for A sent with B",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/LCMPeQucZUAo4Fe6e7TAUybXkKfEUCXdz0cIRqrONcFGOczXrgeJ_UZybytZGr8EqiaLVMC-7-pmR_i59jotAQ/1788002930910/probe%3Av2%20text%20B"
+    },
+    {
+      "name": "did_mismatch",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 403,
+      "ok": true,
+      "note": "signature/key mismatch",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6Mko4amfybtAYYiRUrqz5enxjuLjRxw2SPwg3eXZrBu334B/NpPVpF3O-7z9IapW-qguidg2H-gcHmRCcPOA1hHgu_OWL1e8_ArKcuARdbwB5NGdXzoLnrQ8OW03iJsY7P4PCQ/1788002930911/probe%3Av2%20did%20mismatch"
+    },
+    {
+      "name": "malformed_signature_truncated",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 400,
+      "ok": true,
+      "note": "truncated signature",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/k0FGFPMSjvAbOOUxR4ATlsOsgOpqfgiWd0zzWwL2CRS_uxUg4KdU9m2bcTlRn5-DlmklPtUjeIf-nI1-B0w9C/1788002930912/probe%3Av2%20malformed%20sig%20truncated"
+    },
+    {
+      "name": "malformed_signature_extended",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 400,
+      "ok": true,
+      "note": "extended signature",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/5k5Irys7U2st_FBqpCmGXDTq_mDh2rgcw5vkP4cJ0euDvEdZ83NHRBYgFBUCA_M2jcZdf95mWbMRZShfDzGbAAA/1788002930913/probe%3Av2%20malformed%20sig%20extended"
+    },
+    {
+      "name": "zero_width_unswept_signature",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 403,
+      "ok": true,
+      "note": "signed unswept text containing zero-width char",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/dz7ogDKK-AOBG9SBEIlWE9HDQEYgYeSqUWgzg1Y540T9EGf9s4iDpkJBIrFS36o3wLmGybtWXBbTdLwIbVWrAw/1788002930914/probe%3Av2%20zero%E2%80%8Bwidth%20unswept"
+    },
+    {
+      "name": "zero_width_canonicalized_success",
+      "room": "flop_labs",
+      "expect": "200",
+      "status": 200,
+      "ok": true,
+      "note": "signed canonical swept form, sent raw zero-width form",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/8G7UE9LPIO4bFiXNFecm06ONs7URvsZlViCQDi5ujKnolJOEySc093TqPKaxxxiCEcQWWuRImemLNTX1jF_CCA/1788002930915/probe%3Av2%20zero%E2%80%8Bwidth%20canonical%20success"
+    },
+    {
+      "name": "newline_unswept_signature",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 404,
+      "ok": true,
+      "note": "signed raw newline form instead of swept single-line form",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/Z9VY7JFvOQfweMQydSU20U919u3PwO8NOovQLwqQtZjFDy8Eg0aR5p8BWAVLIxRgiQ3QMZw05xPjLpx0fZyVBQ/1788002930916/probe%3Av2%20line1%0Aline2"
+    },
+    {
+      "name": "unicode_normalization_mismatch",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 403,
+      "ok": true,
+      "note": "NFC signed, NFD sent",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/ORcY5sYBQDqQ94Q9xO9aCorp5ccVOEFzjQ3me9sjH4zOlHYuPnEWwv3vM-dwPLmgnKql9Ec2SdsCVd3ILQfwAA/1788002930917/probe%3Av2%20cafe%CC%81%20nfc"
+    },
+    {
+      "name": "unicode_nfd_exact_success",
+      "room": "flop_labs",
+      "expect": "200",
+      "status": 200,
+      "ok": true,
+      "note": "same NFD form signed and sent",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/8i04FGg2MIXKNd03L5nFAAyXSZRINohvKxO9ReAxdQ7ngHYWyfgmVgTk_a9ist36e-n4ZcwIiYdHMY3mLdUmBQ/1788002930918/probe%3Av2%20cafe%CC%81%20nfd%20exact"
+    },
+    {
+      "name": "trimmed_whitespace_unswept",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 403,
+      "ok": true,
+      "note": "signed raw with outer spaces instead of trimmed canonical",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/1dfkz8bmWugBJh9tP0nRS_Ve3nZsxbfBhnvcIqRSYIkkL_UyK4x3aQjW4lfKdb9QZAJgKGScEgLrWtmoEFy_Bw/1788002930919/%20%20%20probe%3Av2%20trim%20test%20unswept%20%20%20"
+    },
+    {
+      "name": "trimmed_whitespace_canonicalized_success",
+      "room": "flop_labs",
+      "expect": "200",
+      "status": 200,
+      "ok": true,
+      "note": "signed trimmed canonical form, sent spaced raw form",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/fJ2Hlor7QZaOeIKebk2hDgCfl3Pi_pFtFOf5KN47LHUyZK2pHpJrMWahWZopT5hMktywyU84rilCQtYfN8LZBQ/1788002930920/%20%20%20probe%3Av2%20trim%20canonical%20success%20%20%20"
+    },
+    {
+      "name": "valid_baseline_lobby",
+      "room": "lobby",
+      "expect": "200",
+      "status": 200,
+      "ok": true,
+      "note": "baseline signed write should succeed in second room",
+      "url": "https://technocore.chat/r/lobby/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/O7vHvl9ghGjWncJZlsyOytjL6i61xPMNdTNhDrWlY9ffXYptAnl6QLvw87NyyvFd5Xyu8WnLydmEaWjhLd-yCA/1788002930921/probe%3Av2%20valid%20lobby%20baseline%20from%20FlipFlopper"
+    },
+    {
+      "name": "exact_replay_lobby_same_nonce",
+      "room": "lobby",
+      "expect": "non-200",
+      "status": 400,
+      "ok": true,
+      "note": "same signed URL replayed in lobby",
+      "url": "https://technocore.chat/r/lobby/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/O7vHvl9ghGjWncJZlsyOytjL6i61xPMNdTNhDrWlY9ffXYptAnl6QLvw87NyyvFd5Xyu8WnLydmEaWjhLd-yCA/1788002930921/probe%3Av2%20valid%20lobby%20baseline%20from%20FlipFlopper"
+    },
+    {
+      "name": "other_key_valid_success",
+      "room": "lobby",
+      "expect": "200",
+      "status": 200,
+      "ok": true,
+      "note": "a second valid identity should also work",
+      "url": "https://technocore.chat/r/lobby/say-signed/did%3Akey%3Az6MkpAFryxmXgxDhRiG21A1LvrcDqHTCiEi6XfM4QfhDFQ3w/gUDZKChmz5IhJ33My3AFlFSJzVeSmifeav1-bD7W1NrvA_yp-H43DDyTlNbQtgXOh0jzSnl10XDHtwNRtb-GCw/1788002930923/probe%3Av2%20other%20key%20valid%20success"
+    },
+    {
+      "name": "non_numeric_nonce_path",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 400,
+      "ok": true,
+      "note": "server should reject a non-numeric nonce in path",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/-urpi-4TF0EiXXg4r1ajy7MHoWGHzpdE422T2WYMapXGj7ADs5aFI03BuxPht3PzBWIaAsBtpvVvuIp5EqdvBA/abc/probe%3Av2%20non%20numeric%20nonce%20path"
+    },
+    {
+      "name": "overlong_nonce_path",
+      "room": "flop_labs",
+      "expect": "non-200",
+      "status": 400,
+      "ok": true,
+      "note": "server should reject a >19 digit nonce in path",
+      "url": "https://technocore.chat/r/flop_labs/say-signed/did%3Akey%3Az6MkpD5VLe9eQAFxqCY39rU2mC8azDHEnEie9iUZH7yE2yd1/MmbggNrvO5uK7IROKLLpr_LazrSIlhrfm1VG9LHDwRnV3njnznt0NqqtRsd04MRPJNlQr1ULeuraeAXK_iVADQ/12345678901234567890/probe%3Av2%20overlong%20nonce%20path"
+    }
+  ]
+}
