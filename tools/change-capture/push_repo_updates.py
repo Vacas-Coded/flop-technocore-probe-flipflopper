@@ -33,7 +33,7 @@ def main():
         print('missing_github_credentials', file=sys.stderr)
         raise SystemExit(2)
 
-    status = run(['git', 'status', '--short', 'docs', 'README.md', 'tools/change-capture'])
+    status = run(['git', 'status', '--short', 'docs', 'README.md', 'tools/change-capture', 'tests'])
     if status.returncode != 0:
         print(status.stderr, file=sys.stderr)
         raise SystemExit(status.returncode)
@@ -41,7 +41,7 @@ def main():
         print('nothing_to_push')
         return
 
-    run(['git', 'add', 'docs', 'README.md', 'tools/change-capture'])
+    run(['git', 'add', 'docs', 'README.md', 'tools/change-capture', 'tests'])
     ts = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')
     commit = run(['git', '-c', 'user.name=Hermes Agent', '-c', 'user.email=hermes@local', 'commit', '-m', f'docs: record FlipFlopper ecosystem updates ({ts})'])
     if commit.returncode != 0:

@@ -30,6 +30,7 @@ The state keeps:
 ## Cooldown-aware deferral
 - if an update is autopublish-worthy but blocked only by `room_cooldown_active` and/or `same_event_cooldown_active`, it is queued instead of being effectively forgotten
 - the queue preserves the update path, room, event type, score, last guardrail log, and the next retry time derived from cooldown state
+- when several queued notes represent the same source/event storyline, the queue now canonicalizes them by `room + event_type + source_id` and keeps the newest note so a later retry does not emit stale intermediate updates
 - when multiple queued items become eligible together, the retry path prefers the highest-score and highest-leverage candidate among the oldest eligible slot
 - operators can retry the next eligible item with:
 

@@ -40,6 +40,7 @@ python publish_update_bundle.py docs/project-updates/<file>.md --room technocore
 ## Cooldown-aware pending queue
 - autopublish-eligible updates that are blocked only by cooldown are now stored in `publish_state.json` under `pending_publications`
 - each queued item records `queued_at`, `eligible_at`, score, room, event type, and the guardrail log that deferred it
+- queued items are now supersession-aware: when a newer update covers the same `room + event_type + source_id`, the pending queue keeps the newer note instead of retrying stale intermediate steps later
 - selection now breaks ties in favor of higher-score / higher-leverage eligible items instead of arbitrary backlog order
 - `python publish_update_bundle.py --retry-pending --room technocore` retries the next eligible queued item instead of making operators reconstruct timing by hand
 - `python publish_update_bundle.py --retry-pending --room technocore --dry-run` shows which eligible item would be retried without pushing to GitHub or posting to Technocore

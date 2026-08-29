@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import copy
 import hashlib
 import json
 import pathlib
@@ -60,9 +61,10 @@ def parse_update(path: pathlib.Path):
     why = section('Why it matters').splitlines()[0].strip() if section('Why it matters') else ''
     verified = [re.sub(r'^-\s*', '', x).strip() for x in section('Verified').splitlines() if x.strip()]
     source_id = metadata('source_id')
+    date_utc = metadata('date_utc')
     rel = path.relative_to(REPO).as_posix() if path.is_relative_to(REPO) else path.name
     github_url = GITHUB_BASE + quote(rel)
-    return {'title': title, 'summary': summary, 'why': why, 'verified': verified, 'github_url': github_url, 'rel': rel, 'source_id': source_id}
+    return {'title': title, 'summary': summary, 'why': why, 'verified': verified, 'source_id': source_id, 'date_utc': date_utc, 'github_url': github_url, 'rel': rel}
 
 
 def build_post(data: dict, score: dict | None = None) -> str:
@@ -97,17 +99,59 @@ def default_state() -> dict:
     }
 
 
+def enrich_pending_item(item: dict) -> dict:
+    item = dict(item or {})
+    update_path = pathlib.Path(item.get('update_path') or '')
+    if update_path.exists():
+        try:
+            update = parse_update(update_path)
+        except Exception:
+            update = {}
+    else:
+        update = {}
+    room = item.get('room') or DEFAULT_ROOM
+    event_type = item.get('event_type') or 'docs_change'
+    item.setdefault('title', update.get('title'))
+    item.setdefault('source_id', update.get('source_id'))
+    item.setdefault('update_date_utc', update.get('date_utc'))
+    item.setdefault('supersession_key', pending_supersession_key(room, event_type, item.get('source_id') or update.get('source_id')))
+    return item
+
+
+def canonicalize_pending_publications(state: dict) -> dict:
+    pending = state.setdefault('pending_publications', {})
+    canonical = {}
+    for raw_key, raw_item in list(pending.items()):
+        item = enrich_pending_item(raw_item)
+        key = pending_key(item.get('room') or DEFAULT_ROOM, item.get('update_path') or raw_key)
+        supersession_key = item.get('supersession_key')
+        if supersession_key:
+            existing_key = next((k for k, v in canonical.items() if v.get('supersession_key') == supersession_key), None)
+            if existing_key is not None:
+                if should_replace_pending(canonical[existing_key], item):
+                    canonical.pop(existing_key, None)
+                else:
+                    continue
+        canonical[key] = item
+    state['pending_publications'] = canonical
+    return state
+
+
 def normalize_state(state: dict | None) -> dict:
     base = default_state()
     state = state or {}
     for key, value in base.items():
         state.setdefault(key, value if not isinstance(value, dict) else dict(value))
-    return state
+    return canonicalize_pending_publications(state)
 
 
 def load_state() -> dict:
     if STATE_PATH.exists():
-        return normalize_state(json.loads(STATE_PATH.read_text()))
+        raw = json.loads(STATE_PATH.read_text())
+        normalized = normalize_state(copy.deepcopy(raw))
+        if normalized != raw:
+            save_state(normalized)
+        return normalized
     return default_state()
 
 
@@ -271,6 +315,50 @@ def pending_key(room: str, update_path: pathlib.Path | str) -> str:
     return f'{room}::{update_path}'
 
 
+def pending_supersession_key(room: str, event_type: str, source_id: str | None) -> str | None:
+    source_id = (source_id or '').strip()
+    if not source_id:
+        return None
+    return f'{room}::{event_type}::{source_id}'
+
+
+def pending_sort_timestamp(item: dict) -> datetime:
+    return (
+        parse_iso(item.get('update_date_utc'))
+        or parse_iso(item.get('queued_at'))
+        or parse_iso(item.get('updated_at'))
+        or datetime.fromtimestamp(0, tz=timezone.utc)
+    )
+
+
+def should_replace_pending(existing: dict, candidate: dict) -> bool:
+    existing_ts = pending_sort_timestamp(existing)
+    candidate_ts = pending_sort_timestamp(candidate)
+    if candidate_ts != existing_ts:
+        return candidate_ts > existing_ts
+    existing_score = existing.get('score') or 0
+    candidate_score = candidate.get('score') or 0
+    if candidate_score != existing_score:
+        return candidate_score > existing_score
+    existing_leverage = existing.get('airdrop_leverage') or 0
+    candidate_leverage = candidate.get('airdrop_leverage') or 0
+    if candidate_leverage != existing_leverage:
+        return candidate_leverage >= existing_leverage
+    return (candidate.get('update_path') or '') >= (existing.get('update_path') or '')
+
+
+def remove_superseded_pending_publications(state: dict, candidate: dict):
+    supersession_key = candidate.get('supersession_key')
+    if not supersession_key:
+        return
+    pending = state.setdefault('pending_publications', {})
+    for key, existing in list(pending.items()):
+        if existing.get('supersession_key') != supersession_key:
+            continue
+        if should_replace_pending(existing, candidate):
+            pending.pop(key, None)
+
+
 def resolve_pending_eligible_at(details: dict) -> str | None:
     candidates = [parse_iso(details.get('cooldown_allows_at')), parse_iso(details.get('same_event_allows_at'))]
     candidates = [c for c in candidates if c]
@@ -295,12 +383,18 @@ def upsert_pending_publication(state: dict, room: str, event_type: str, update_p
     key = pending_key(room, update_path)
     pending = state.setdefault('pending_publications', {})
     existing = pending.get(key) or {}
+    update = parse_update(update_path)
+    supersession_key = pending_supersession_key(room, event_type, update.get('source_id'))
     record = {
         'room': room,
         'event_type': event_type,
         'update_path': str(update_path),
         'queued_at': existing.get('queued_at') or now,
         'updated_at': now,
+        'title': update.get('title'),
+        'source_id': update.get('source_id'),
+        'update_date_utc': update.get('date_utc'),
+        'supersession_key': supersession_key,
         'eligible_at': resolve_pending_eligible_at(details),
         'score': score.get('total_score'),
         'airdrop_leverage': ((score.get('components') or {}).get('airdrop_leverage') or 0),
@@ -313,6 +407,15 @@ def upsert_pending_publication(state: dict, room: str, event_type: str, update_p
         },
         'log_path': str(log_path),
     }
+    if supersession_key:
+        for existing_key, existing_item in list(pending.items()):
+            if existing_key == key:
+                continue
+            if existing_item.get('supersession_key') != supersession_key:
+                continue
+            if not should_replace_pending(existing_item, record):
+                return existing_item
+        remove_superseded_pending_publications(state, record)
     pending[key] = record
     save_state(state)
     return record
@@ -320,7 +423,13 @@ def upsert_pending_publication(state: dict, room: str, event_type: str, update_p
 
 def remove_pending_publication(state: dict, room: str, update_path: pathlib.Path):
     pending = state.setdefault('pending_publications', {})
-    pending.pop(pending_key(room, update_path), None)
+    key = pending_key(room, update_path)
+    removed = pending.pop(key, None)
+    supersession_key = (removed or {}).get('supersession_key')
+    if supersession_key:
+        for other_key, other_item in list(pending.items()):
+            if other_item.get('supersession_key') == supersession_key:
+                pending.pop(other_key, None)
 
 
 def select_pending_publication(state: dict, room: str | None = None, now: datetime | None = None) -> dict | None:
