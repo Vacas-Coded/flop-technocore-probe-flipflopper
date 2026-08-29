@@ -58,6 +58,7 @@ That is exactly what this repo is for.
 - `tools/did-room-explorer/` — live DID note monitor and room activity explorer
 - `tools/testnet-readiness-harness/` — readiness scoring and report generation for the pre-testnet phase
 - `tools/first-contact-runner/` — safe first-pass inspection for newly live testnet surfaces
+- `tools/activation-adapters/` — faucet / wallet / app-inference safe adapters for day-0 activation
 - `LICENSE` — MIT license
 
 ## Included tooling
@@ -94,6 +95,13 @@ That is exactly what this repo is for.
 - classifies capability as `view_only`, `form_only`, `wallet_gated`, `api_like`, `action_capable`, or `unavailable`
 - extracts forms and field names when present
 - writes timestamped JSON + Markdown evidence reports without taking side effects
+
+### Activation adapters
+`tools/activation-adapters/` adds surface-specific safe adapters on top of first-contact:
+- `faucet_adapter.py` for claim/cooldown/wallet prerequisite reconnaissance
+- `wallet_adapter.py` for chain, wallet-brand and signing-gate reconnaissance
+- `app_inference_adapter.py` for auth/schema/quota reconnaissance
+- `dispatch_adapter.py` to route by surface type
 
 ## Running the probe
 
