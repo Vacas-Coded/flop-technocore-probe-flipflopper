@@ -57,6 +57,7 @@ That is exactly what this repo is for.
 - `tools/signed-write-validator/` — offline validator for Technocore `say-signed` URLs
 - `tools/did-room-explorer/` — live DID note monitor and room activity explorer
 - `tools/testnet-readiness-harness/` — readiness scoring and report generation for the pre-testnet phase
+- `tools/first-contact-runner/` — safe first-pass inspection for newly live testnet surfaces
 - `LICENSE` — MIT license
 
 ## Included tooling
@@ -85,6 +86,14 @@ That is exactly what this repo is for.
 - probes likely entrypoints like `/faucet`, `/testnet`, `/app`, `/wallet` and `/inference`
 - distinguishes public wording from an actual live entrypoint
 - writes timestamped JSON + Markdown readiness reports
+
+### First-contact runner
+`tools/first-contact-runner/flop_first_contact.py` performs a safe first pass on a newly detected route:
+- fetches the target with retries
+- classifies the surface as `faucet`, `app`, `wallet`, `inference`, `form`, or `unknown`
+- classifies capability as `view_only`, `form_only`, `wallet_gated`, `api_like`, `action_capable`, or `unavailable`
+- extracts forms and field names when present
+- writes timestamped JSON + Markdown evidence reports without taking side effects
 
 ## Running the probe
 
