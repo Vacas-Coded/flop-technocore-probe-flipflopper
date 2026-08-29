@@ -14,6 +14,7 @@ It applies an event-specific threshold layer on top of the base publication scor
 ## Interpretation
 - docs and harness changes need a higher bar because many are informative but not worth feed noise
 - releases and live-surface activations deserve a lower bar because they are more likely to matter operationally
+- event-specific thresholds sit on top of the base score, which now includes `airdrop_leverage`
 - if the watcher decision is not `autopublish`, the update can still be kept as repo docs and/or draft material
 
 ## Goal

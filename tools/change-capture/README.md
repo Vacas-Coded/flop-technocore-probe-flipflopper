@@ -5,6 +5,7 @@ Utilities for turning a verified watcher change into:
 - a repo-visible publication draft
 - a scored publication decision
 - an index entry in `docs/PROJECT_UPDATES.md`
+- guarded Technocore publishing with cooldown / dedupe state
 
 ## Usage
 ```bash

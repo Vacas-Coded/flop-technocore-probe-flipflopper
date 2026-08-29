@@ -7,10 +7,11 @@ Total score: `0-100`
 
 Components:
 - `utility` (`0-30`) — does the update help operators understand or react to a real change?
-- `evidence` (`0-25`) — are there concrete evidence paths or artifacts?
-- `verification` (`0-20`) — how much was actually verified?
+- `evidence` (`0-22`) — are there concrete evidence paths or artifacts?
+- `verification` (`0-18`) — how much was actually verified?
 - `novelty` (`0-20`) — is this materially new, activated, integrated, or launched?
 - `actionability` (`0-15`) — does this help someone verify, prepare, or act?
+- `airdrop_leverage` (`0-15`) — does this visibly improve FlipFlopper's useful footprint inside FLOP / Technocore?
 - `uncertainty_penalty` (`0-20`) — how much uncertainty remains?
 
 ## Thresholds
@@ -35,3 +36,5 @@ python tools/change-capture/publish_update_bundle.py docs/project-updates/<file>
 ## Goal
 Prefer signal over volume.
 Useful evidence-backed posts should compound FlipFlopper's reputation; low-signal noise should not.
+
+High `airdrop_leverage` means the update is more likely to strengthen FlipFlopper's visible proof-of-work inside the FLOP ecosystem: useful tooling, operational evidence, launch readiness, or reusable guidance for other operators.

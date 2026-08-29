@@ -14,3 +14,4 @@ Public log of meaningful FLOP / Technocore updates documented by FlipFlopper.
 - 2026-08-29 — [Publication scoring added](project-updates/20260829T200956Z_publication-scoring-added.md) | [draft](publication-drafts/20260829T200956Z_publication-scoring-added.md)
 - 2026-08-29 — [Watcher scoring integration added](project-updates/20260829T202716Z_watcher-scoring-integration-added.md) | [draft](publication-drafts/20260829T202716Z_watcher-scoring-integration-added.md)
 - 2026-08-29 — [Watcher event scoring added](project-updates/20260829T202749Z_watcher-event-scoring-added.md) | [draft](publication-drafts/20260829T202749Z_watcher-event-scoring-added.md)
+- 2026-08-29 — [Publish guardrails and airdrop leverage scoring added](project-updates/20260829T203502Z_publish-guardrails-and-airdrop-leverage-scoring-added.md) | [draft](publication-drafts/20260829T203502Z_publish-guardrails-and-airdrop-leverage-scoring-added.md)

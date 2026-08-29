@@ -14,38 +14,70 @@ def bullets(body: str) -> list[str]:
     return [re.sub(r'^-\s*', '', x).strip() for x in body.splitlines() if x.strip()]
 
 
+def metadata_value(text: str, key: str) -> str:
+    m = re.search(rf'^-\s*{re.escape(key)}:\s*(.+)$', text, re.M)
+    return m.group(1).strip() if m else ''
+
+
+def has_any(text: str, patterns: list[str]) -> bool:
+    low = text.lower()
+    return any(p in low for p in patterns)
+
+
 def score_update(path: pathlib.Path) -> dict:
     text = path.read_text()
     title = text.splitlines()[0].lstrip('#').strip() if text.splitlines() else path.stem
+    source_id = metadata_value(text, 'source_id')
     summary = section(text, 'Summary')
     why = section(text, 'Why it matters')
     verified = bullets(section(text, 'Verified'))
     uncertain = bullets(section(text, 'Still uncertain'))
     evidence = bullets(section(text, 'Evidence'))
+    body = ' '.join([title, source_id, summary, why, ' '.join(verified), ' '.join(uncertain), ' '.join(evidence)])
+    low = body.lower()
 
-    utility = 25 if why else 10
-    if re.search(r'operator|verify|readiness|claim|wallet|docs|surface|watcher|testnet|api|auth', (summary + ' ' + why).lower()):
-        utility = min(30, utility + 5)
+    utility = 18
+    if why:
+        utility += 6
+    if has_any(low, ['operator', 'verify', 'readiness', 'claim', 'wallet', 'docs', 'surface', 'watcher', 'testnet', 'api', 'auth', 'workflow', 'playbook', 'checklist']):
+        utility += 6
+    utility = min(30, utility)
 
-    evidence_score = min(25, len(evidence) * 8 + (5 if len(evidence) >= 2 else 0))
-    verification_score = min(20, len(verified) * 7)
+    evidence_score = min(22, len(evidence) * 7 + (4 if len(evidence) >= 2 else 0) + (4 if any('/root/.hermes/' in x or 'github.com/' in x for x in evidence) else 0))
+    verification_score = min(18, len(verified) * 6 + (3 if len(verified) >= 2 else 0))
 
-    novelty = 10
-    if re.search(r'added|new|first|integrated|automation|pipeline|runner|adapter|playbook|scoring', title.lower() + ' ' + summary.lower()):
+    novelty = 8
+    if has_any(low, ['added', 'new', 'first', 'integrated', 'automation', 'pipeline', 'runner', 'adapter', 'playbook', 'scoring']):
+        novelty = 14
+    if has_any(low, ['live', 'activated', 'launch', 'opened', 'faucet', 'testnet', 'release', 'mainnet']):
         novelty = 18
-    if re.search(r'live|activated|launch|opened|faucet|testnet', title.lower() + ' ' + summary.lower()):
+    if has_any(low, ['explicit_live_surface', 'activation detected', 'readiness transition']):
         novelty = 20
 
-    actionability = 8
-    if re.search(r'how to verify|what changed|why it matters|operator|checklist|playbook|workflow|ready', (summary + ' ' + why).lower()):
-        actionability = 15
+    actionability = 6
+    if has_any(low, ['how to verify', 'what changed', 'why it matters', 'operator', 'checklist', 'playbook', 'workflow', 'ready', 'guide', 'steps']):
+        actionability = 12
+    if has_any(low, ['claim', 'wallet', 'faucet', 'auth', 'api', 'surface', 'entrypoint']):
+        actionability = min(15, actionability + 3)
 
-    uncertainty_penalty = min(20, len(uncertain) * 4)
-    if any('still needs human' in x.lower() or 'semantic meaning' in x.lower() for x in uncertain):
-        uncertainty_penalty += 3
-    uncertainty_penalty = min(20, uncertainty_penalty)
+    airdrop_leverage = 0
+    if has_any(low, ['flop', 'technocore', 'testnet', 'airdrop']):
+        airdrop_leverage += 4
+    if has_any(low, ['public', 'repo', 'github', 'document', 'evidence', 'proof-of-work', 'proof of work']):
+        airdrop_leverage += 4
+    if has_any(low, ['watcher', 'runner', 'adapter', 'playbook', 'readiness', 'activation', 'faucet', 'wallet', 'claim']):
+        airdrop_leverage += 5
+    if has_any(low, ['operator', 'ecosystem', 'useful', 'utility', 'workflow', 'guide']):
+        airdrop_leverage += 3
+    if has_any(low, ['minor wording', 'cleanup only', 'small wording cleanup only']):
+        airdrop_leverage -= 6
+    airdrop_leverage = max(0, min(15, airdrop_leverage))
 
-    total = utility + evidence_score + verification_score + novelty + actionability - uncertainty_penalty
+    uncertainty_penalty = min(18, len(uncertain) * 4)
+    if any('still needs human' in x.lower() or 'semantic meaning' in x.lower() or 'manual confirmation' in x.lower() for x in uncertain):
+        uncertainty_penalty = min(20, uncertainty_penalty + 3)
+
+    total = utility + evidence_score + verification_score + novelty + actionability + airdrop_leverage - uncertainty_penalty
     total = max(0, min(100, total))
 
     if total >= 70:
@@ -57,6 +89,7 @@ def score_update(path: pathlib.Path) -> dict:
 
     return {
         'title': title,
+        'source_id': source_id,
         'path': str(path),
         'components': {
             'utility': utility,
@@ -64,6 +97,7 @@ def score_update(path: pathlib.Path) -> dict:
             'verification': verification_score,
             'novelty': novelty,
             'actionability': actionability,
+            'airdrop_leverage': airdrop_leverage,
             'uncertainty_penalty': uncertainty_penalty,
         },
         'total_score': total,
