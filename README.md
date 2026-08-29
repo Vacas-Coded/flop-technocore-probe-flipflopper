@@ -59,6 +59,7 @@ That is exactly what this repo is for.
 - `tools/testnet-readiness-harness/` — readiness scoring and report generation for the pre-testnet phase
 - `tools/first-contact-runner/` — safe first-pass inspection for newly live testnet surfaces
 - `tools/activation-adapters/` — faucet / wallet / app-inference safe adapters for day-0 activation
+- `tools/day0-operations/` — evidence templates, decision trees, and packet generator for launch day
 - `LICENSE` — MIT license
 
 ## Included tooling
@@ -102,6 +103,15 @@ That is exactly what this repo is for.
 - `wallet_adapter.py` for chain, wallet-brand and signing-gate reconnaissance
 - `app_inference_adapter.py` for auth/schema/quota reconnaissance
 - `dispatch_adapter.py` to route by surface type
+
+### Day-0 operations kit
+`tools/day0-operations/` provides the last-mile operator scaffolding:
+- evidence capture template
+- manual claim checklist
+- manual wallet connect checklist
+- GET-only docs probe checklist
+- claim / wallet / docs decision trees
+- `generate_day0_packet.py` to materialize a timestamped local packet for a specific route
 
 ## Running the probe
 

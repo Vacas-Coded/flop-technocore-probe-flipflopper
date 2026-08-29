@@ -1,0 +1,27 @@
+# Evidence Capture Template
+
+- timestamp_utc:
+- detector_source: watcher | harness | manual
+- route_url:
+- observed_surface_type:
+- observed_capability:
+- http_status:
+- content_type:
+- exact_page_title:
+- exact_wording_excerpt:
+- wallet_required: yes | no | unclear
+- auth_required: yes | no | unclear
+- quota_or_cooldown_present: yes | no | unclear
+- form_present: yes | no
+- raw_snapshot_path:
+- first_contact_report_json:
+- first_contact_report_md:
+- adapter_report_json:
+- adapter_report_md:
+- playbook_path:
+- public_proof_link_if_any:
+- operator_notes:
+- claims_not_made:
+  - eligibility not assumed beyond source text
+  - rewards not assumed beyond source text
+  - automation not attempted without explicit approval
