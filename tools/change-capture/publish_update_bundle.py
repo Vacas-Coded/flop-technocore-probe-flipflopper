@@ -18,6 +18,30 @@ STATE_PATH = pathlib.Path('/root/.hermes/flipflopper/publish_state.json')
 GITHUB_BASE = 'https://github.com/Vacas-Coded/flop-technocore-probe-flipflopper/blob/main/'
 DEFAULT_ROOM = 'technocore'
 DEFAULT_COOLDOWN_MINUTES = 180
+EVENT_COOLDOWNS = {
+    'docs_change': 240,
+    'repo_metadata_change': 180,
+    'commit_change': 150,
+    'release_change': 120,
+    'harness_change': 240,
+    'live_surface_activation': 45,
+    'digest_change': 90,
+    'digest_activation': 60,
+}
+SOURCE_EVENT_TYPES = {
+    'technocore_auth': 'docs_change',
+    'technocore_patterns': 'docs_change',
+    'technocore_llms': 'docs_change',
+    'flop_home': 'docs_change',
+    'flop_teaser': 'docs_change',
+    'flop_llms': 'docs_change',
+    'technocore_repo': 'repo_metadata_change',
+    'technocore_commits': 'commit_change',
+    'technocore_releases': 'release_change',
+    'harness_readiness': 'harness_change',
+    'watcher_digest': 'digest_change',
+    'watcher_activation_digest': 'digest_activation',
+}
 
 
 def parse_update(path: pathlib.Path):
@@ -53,8 +77,7 @@ def build_post(data: dict, score: dict | None = None) -> str:
         f"Airdrop leverage: {leverage}/15" if leverage is not None and leverage >= 10 else '',
         f"Repo note: {data['github_url']}",
     ]
-    msg = ' '.join(x for x in bits if x).strip()
-    return msg[:3900]
+    return ' '.join(x for x in bits if x).strip()[:3900]
 
 
 def run(cmd):
@@ -69,6 +92,7 @@ def load_state() -> dict:
         'by_update': {},
         'by_message_hash': {},
         'last_success_by_room': {},
+        'last_success_by_room_and_event': {},
         'last_attempt_by_update': {},
         'last_attempt_by_message_hash': {},
     }
@@ -100,13 +124,53 @@ def message_hash(room: str, message: str) -> str:
     return hashlib.sha256(f'{room}\n{message}'.encode()).hexdigest()
 
 
-def evaluate_publish_guardrails(state: dict, room: str, update_path: pathlib.Path, message: str, cooldown_minutes: int) -> dict:
+def derive_event_type(source_id: str, explicit_event_type: str | None = None) -> str:
+    if explicit_event_type:
+        return explicit_event_type
+    return SOURCE_EVENT_TYPES.get(source_id, 'docs_change')
+
+
+def resolve_cooldown_minutes(event_type: str, score: dict, requested_minutes: int | None = None) -> dict:
+    base = EVENT_COOLDOWNS.get(event_type, DEFAULT_COOLDOWN_MINUTES)
+    if requested_minutes is not None:
+        base = requested_minutes
+    total = score.get('total_score', 0)
+    leverage = ((score.get('components') or {}).get('airdrop_leverage') or 0)
+    adjustment = 0
+    reasons = []
+    if total >= 90:
+        adjustment -= 30
+        reasons.append('score>=90 => -30m')
+    elif total >= 85:
+        adjustment -= 15
+        reasons.append('score>=85 => -15m')
+    if leverage >= 13:
+        adjustment -= 15
+        reasons.append('airdrop_leverage>=13 => -15m')
+    elif leverage >= 10:
+        adjustment -= 10
+        reasons.append('airdrop_leverage>=10 => -10m')
+    if event_type in {'docs_change', 'harness_change'} and total < 90:
+        adjustment += 30
+        reasons.append('docs/harness non-exceptional => +30m')
+    resolved = max(30, base + adjustment)
+    return {
+        'event_type': event_type,
+        'base_cooldown_minutes': base,
+        'adjustment_minutes': adjustment,
+        'resolved_cooldown_minutes': resolved,
+        'reasons': reasons,
+    }
+
+
+def evaluate_publish_guardrails(state: dict, room: str, event_type: str, update_path: pathlib.Path, message: str, cooldown_minutes: int) -> dict:
     now = datetime.now(timezone.utc)
     rel_update = str(update_path)
     mhash = message_hash(room, message)
     last_room_ts = parse_iso((state.get('last_success_by_room') or {}).get(room))
+    last_room_event_ts = parse_iso((state.get('last_success_by_room_and_event') or {}).get(f'{room}::{event_type}'))
     blockers = []
-    details = {'message_hash': mhash, 'room': room, 'cooldown_minutes': cooldown_minutes}
+    details = {'message_hash': mhash, 'room': room, 'event_type': event_type, 'cooldown_minutes': cooldown_minutes}
 
     prior_update = (state.get('by_update') or {}).get(rel_update)
     if prior_update and prior_update.get('status') == 'success':
@@ -126,20 +190,33 @@ def evaluate_publish_guardrails(state: dict, room: str, update_path: pathlib.Pat
             blockers.append('room_cooldown_active')
             details['cooldown_remaining_minutes'] = round((allowed_at - now).total_seconds() / 60, 2)
 
-    return {
-        'allowed': not blockers,
-        'blockers': blockers,
-        'details': details,
-    }
+    if last_room_event_ts:
+        event_cooldown = max(15, min(cooldown_minutes, EVENT_COOLDOWNS.get(event_type, cooldown_minutes)))
+        event_allowed_at = last_room_event_ts + timedelta(minutes=event_cooldown)
+        details['last_success_at_same_event'] = last_room_event_ts.isoformat()
+        details['same_event_cooldown_minutes'] = event_cooldown
+        details['same_event_allows_at'] = event_allowed_at.isoformat()
+        if now < event_allowed_at:
+            blockers.append('same_event_cooldown_active')
+            details['same_event_remaining_minutes'] = round((event_allowed_at - now).total_seconds() / 60, 2)
+
+    return {'allowed': not blockers, 'blockers': blockers, 'details': details}
 
 
-def record_attempt(state: dict, room: str, update_path: pathlib.Path, msg_hash: str, status: str, extra: dict | None = None):
+def record_attempt(state: dict, room: str, event_type: str, update_path: pathlib.Path, msg_hash: str, status: str, extra: dict | None = None):
     ts = iso_now()
-    record = {'at': ts, 'room': room, 'update_path': str(update_path), 'message_hash': msg_hash, 'status': status}
+    record = {
+        'at': ts,
+        'room': room,
+        'event_type': event_type,
+        'update_path': str(update_path),
+        'message_hash': msg_hash,
+        'status': status,
+    }
     if extra:
         record.update(extra)
     state.setdefault('posts', []).append(record)
-    state['posts'] = state['posts'][-200:]
+    state['posts'] = state['posts'][-400:]
 
     state.setdefault('last_attempt_by_update', {})[str(update_path)] = record
     state.setdefault('last_attempt_by_message_hash', {})[msg_hash] = record
@@ -150,6 +227,7 @@ def record_attempt(state: dict, room: str, update_path: pathlib.Path, msg_hash: 
             'status': status,
             'at': ts,
             'room': room,
+            'event_type': event_type,
             'message_hash': msg_hash,
             **(extra or {}),
         }
@@ -160,13 +238,20 @@ def record_attempt(state: dict, room: str, update_path: pathlib.Path, msg_hash: 
             'status': status,
             'at': ts,
             'room': room,
+            'event_type': event_type,
             'update_path': str(update_path),
             **(extra or {}),
         }
 
     if status == 'success':
         state.setdefault('last_success_by_room', {})[room] = ts
+        state.setdefault('last_success_by_room_and_event', {})[f'{room}::{event_type}'] = ts
     save_state(state)
+
+
+def make_log_path(update_path: pathlib.Path, room: str) -> pathlib.Path:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    return LOG_DIR / f'{stamp_now()}_{update_path.stem}_{room}.json'
 
 
 def main():
@@ -175,7 +260,8 @@ def main():
     ap.add_argument('--room', default=DEFAULT_ROOM)
     ap.add_argument('--skip-github-push', action='store_true')
     ap.add_argument('--force', action='store_true')
-    ap.add_argument('--cooldown-minutes', type=int, default=DEFAULT_COOLDOWN_MINUTES)
+    ap.add_argument('--cooldown-minutes', type=int)
+    ap.add_argument('--event-type', default='')
     args = ap.parse_args()
 
     update_path = pathlib.Path(args.update_path)
@@ -190,13 +276,17 @@ def main():
         print(s.stderr, file=sys.stderr)
         raise SystemExit(s.returncode)
     score = json.loads(s.stdout)
+    event_type = derive_event_type(data.get('source_id') or '', args.event_type or None)
+    cooldown = resolve_cooldown_minutes(event_type, score, args.cooldown_minutes)
     post = build_post(data, score)
     state = load_state()
-    guardrails = evaluate_publish_guardrails(state, args.room, update_path, post, args.cooldown_minutes)
+    guardrails = evaluate_publish_guardrails(state, args.room, event_type, update_path, post, cooldown['resolved_cooldown_minutes'])
     results = {
         'attempt_at': iso_now(),
         'update_path': str(update_path),
         'room': args.room,
+        'event_type': event_type,
+        'cooldown_policy': cooldown,
         'score': score,
         'guardrails': guardrails,
         'github_pushed': None,
@@ -206,22 +296,18 @@ def main():
     msg_hash = guardrails['details']['message_hash']
 
     if score.get('recommendation') != 'autopublish' and not args.force:
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
-        stem = update_path.stem
-        log = LOG_DIR / f'{stamp_now()}_{stem}_{args.room}.json'
+        log = make_log_path(update_path, args.room)
         results['technocore_posted'] = {'skipped': True, 'reason': f"recommendation={score.get('recommendation')} score={score.get('total_score')}"}
         log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
-        record_attempt(state, args.room, update_path, msg_hash, 'skipped_score', {'reason': results['technocore_posted']['reason']})
+        record_attempt(state, args.room, event_type, update_path, msg_hash, 'skipped_score', {'reason': results['technocore_posted']['reason'], 'log_path': str(log)})
         print(str(log))
         return
 
     if not guardrails['allowed'] and not args.force:
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
-        stem = update_path.stem
-        log = LOG_DIR / f'{stamp_now()}_{stem}_{args.room}.json'
+        log = make_log_path(update_path, args.room)
         results['technocore_posted'] = {'skipped': True, 'reason': ','.join(guardrails['blockers'])}
         log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
-        record_attempt(state, args.room, update_path, msg_hash, 'skipped_guardrails', {'reason': results['technocore_posted']['reason']})
+        record_attempt(state, args.room, event_type, update_path, msg_hash, 'skipped_guardrails', {'reason': results['technocore_posted']['reason'], 'log_path': str(log)})
         print(str(log))
         return
 
@@ -229,7 +315,7 @@ def main():
         p = run(['python', str(PUSH)])
         results['github_pushed'] = {'returncode': p.returncode, 'stdout': p.stdout.strip(), 'stderr': p.stderr.strip()}
         if p.returncode != 0 and 'nothing_to_push' not in p.stdout:
-            record_attempt(state, args.room, update_path, msg_hash, 'failed_github_push', {'stdout': p.stdout.strip(), 'stderr': p.stderr.strip()})
+            record_attempt(state, args.room, event_type, update_path, msg_hash, 'failed_github_push', {'stdout': p.stdout.strip(), 'stderr': p.stderr.strip()})
             print(p.stdout)
             print(p.stderr, file=sys.stderr)
             raise SystemExit(p.returncode)
@@ -237,30 +323,33 @@ def main():
     t = run(['python', str(AGENT), 'checkin', '--room', args.room, '--message', post])
     results['technocore_posted'] = {'returncode': t.returncode, 'stdout': t.stdout.strip(), 'stderr': t.stderr.strip()}
     if t.returncode != 0:
-        record_attempt(state, args.room, update_path, msg_hash, 'failed_agent_command', {'stdout': t.stdout.strip(), 'stderr': t.stderr.strip()})
+        record_attempt(state, args.room, event_type, update_path, msg_hash, 'failed_agent_command', {'stdout': t.stdout.strip(), 'stderr': t.stderr.strip()})
         print(t.stdout)
         print(t.stderr, file=sys.stderr)
         raise SystemExit(t.returncode)
     try:
         tech = json.loads(t.stdout)
     except json.JSONDecodeError:
-        record_attempt(state, args.room, update_path, msg_hash, 'failed_invalid_json', {'stdout': t.stdout.strip()[:2000]})
+        record_attempt(state, args.room, event_type, update_path, msg_hash, 'failed_invalid_json', {'stdout': t.stdout.strip()[:2000]})
         print(t.stdout)
         print('invalid technocore publish response json', file=sys.stderr)
         raise SystemExit(3)
+
     post_status = ((tech.get('post') or {}).get('response') or [None])[0]
     verify_status = ((tech.get('verify') or {}).get('response') or [None])[0]
+    results['technocore_posted']['post_status'] = post_status
+    results['technocore_posted']['verify_status'] = verify_status
     if post_status != 200 or verify_status != 200:
-        record_attempt(state, args.room, update_path, msg_hash, 'failed_technocore_confirmation', {'post_status': post_status, 'verify_status': verify_status})
+        log = make_log_path(update_path, args.room)
+        log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
+        record_attempt(state, args.room, event_type, update_path, msg_hash, 'failed_technocore_confirmation', {'post_status': post_status, 'verify_status': verify_status, 'log_path': str(log)})
         print(t.stdout)
         print(f'technocore publish not confirmed: post_status={post_status} verify_status={verify_status}', file=sys.stderr)
         raise SystemExit(4)
 
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    stem = update_path.stem
-    log = LOG_DIR / f'{stem}_{args.room}.json'
+    log = make_log_path(update_path, args.room)
     log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
-    record_attempt(state, args.room, update_path, msg_hash, 'success', {'post_status': post_status, 'verify_status': verify_status, 'log_path': str(log)})
+    record_attempt(state, args.room, event_type, update_path, msg_hash, 'success', {'post_status': post_status, 'verify_status': verify_status, 'log_path': str(log)})
     print(str(log))
 
 
