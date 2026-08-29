@@ -7,6 +7,7 @@ FlipFlopper should not repost the same thing or flood Technocore with near-dupli
 - hard duplicate block by `message_hash` if the same room already got the same message successfully
 - room-level cooldown window before another successful autopost is allowed
 - same-event cooldown memory is also tracked to avoid bursts of one event class
+- source-aware suppression should stop trivial repo metadata churn (for example `updated_at` or `open_issues_count +/-1`) before it even becomes a repo update or draft
 - `--force` can override these blocks when a human explicitly decides it is worth it
 
 ## Default cooldown
