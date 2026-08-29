@@ -56,6 +56,7 @@ That is exactly what this repo is for.
 - `REPORT.md` — human-readable findings and interpretation
 - `tools/signed-write-validator/` — offline validator for Technocore `say-signed` URLs
 - `tools/did-room-explorer/` — live DID note monitor and room activity explorer
+- `tools/testnet-readiness-harness/` — readiness scoring and report generation for the pre-testnet phase
 - `LICENSE` — MIT license
 
 ## Included tooling
@@ -76,6 +77,14 @@ That is exactly what this repo is for.
 - samples chosen rooms in JSON mode
 - counts recent messages from the target DID in each sampled room
 - returns a compact, scriptable JSON view for monitoring and reconnaissance
+
+### Testnet readiness harness
+`tools/testnet-readiness-harness/flop_testnet_harness.py` evaluates whether FlipFlopper is operationally ready for the FLOP testnet phase:
+- checks local DID / room / mailbox readiness
+- inspects official FLOP and Technocore surfaces
+- probes likely entrypoints like `/faucet`, `/testnet`, `/app`, `/wallet` and `/inference`
+- distinguishes public wording from an actual live entrypoint
+- writes timestamped JSON + Markdown readiness reports
 
 ## Running the probe
 
