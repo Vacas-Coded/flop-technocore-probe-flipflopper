@@ -303,6 +303,7 @@ def upsert_pending_publication(state: dict, room: str, event_type: str, update_p
         'updated_at': now,
         'eligible_at': resolve_pending_eligible_at(details),
         'score': score.get('total_score'),
+        'airdrop_leverage': ((score.get('components') or {}).get('airdrop_leverage') or 0),
         'recommendation': score.get('recommendation'),
         'blockers': blockers,
         'reason': ','.join(blockers),
@@ -338,7 +339,8 @@ def select_pending_publication(state: dict, room: str | None = None, now: dateti
     eligible.sort(
         key=lambda item: (
             parse_iso(item.get('eligible_at')) or datetime.fromtimestamp(0, tz=timezone.utc),
-            item.get('score') or 0,
+            -(item.get('score') or 0),
+            -(item.get('airdrop_leverage') or 0),
             item.get('queued_at') or '',
         )
     )
@@ -436,11 +438,14 @@ def publish_once(update_path: pathlib.Path, room: str, event_type: str, skip_git
     return log
 
 
-def retry_pending_publication(room: str, skip_github_push: bool, force: bool) -> pathlib.Path | None:
+def retry_pending_publication(room: str, skip_github_push: bool, force: bool, dry_run: bool = False) -> pathlib.Path | None:
     state = load_state()
     item = select_pending_publication(state, room=room)
     if not item:
         print('no_retryable_pending_publications')
+        return None
+    if dry_run:
+        print(json.dumps({'action': 'retry_pending_dry_run', 'selected_pending_publication': item}, indent=2, ensure_ascii=False))
         return None
     update_path = pathlib.Path(item['update_path'])
     event_type = item.get('event_type') or 'docs_change'
@@ -456,10 +461,11 @@ def main():
     ap.add_argument('--cooldown-minutes', type=int)
     ap.add_argument('--event-type', default='')
     ap.add_argument('--retry-pending', action='store_true', help='Retry the next queued publication whose cooldown has expired')
+    ap.add_argument('--dry-run', action='store_true', help='Preview retry-pending selection without pushing or posting')
     args = ap.parse_args()
 
     if args.retry_pending:
-        retry_pending_publication(args.room, skip_github_push=args.skip_github_push, force=args.force)
+        retry_pending_publication(args.room, skip_github_push=args.skip_github_push, force=args.force, dry_run=args.dry_run)
         return
 
     if not args.update_path:
