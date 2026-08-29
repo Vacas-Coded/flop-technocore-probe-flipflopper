@@ -13,7 +13,7 @@ This closes the gap between queued high-signal work and actual publication, impr
 ## Verified
 - python -m py_compile passed for publish_update_bundle.py and flipflopper_watch.py after the retry changes.
 - A verification artifact confirmed eligible backlog selection now prefers the higher-score, higher-leverage item when multiple candidates mature together.
-- The new --retry-pending --dry-run path returned no_retryable_pending_publications on the current real state and a real watcher rerun stayed silent when nothing was eligible.
+- The new --retry-pending --dry-run path returned no_retryable_pending_publications on the current real state, and a real watcher rerun produced no pending-retry publication action even though that cycle hit a separate transient `technocore_auth` HTTP 503 fetch error.
 
 ## Still uncertain
 - The first live end-to-end automatic retry will only occur once a queued item actually reaches eligible_at during a later watcher cycle.
