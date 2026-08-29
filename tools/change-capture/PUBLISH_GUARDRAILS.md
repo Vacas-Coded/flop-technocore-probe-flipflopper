@@ -18,8 +18,10 @@ Publish state is tracked in:
 The state keeps:
 - recent attempts
 - last successful post per room
-- last status by update path
-- last status by message hash
+- last successful status by update path
+- last successful status by message hash
+- last attempt by update path
+- last attempt by message hash
 
 ## Goal
 Prefer compounding evidence-backed signal over noisy repetition.

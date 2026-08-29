@@ -64,7 +64,14 @@ def run(cmd):
 def load_state() -> dict:
     if STATE_PATH.exists():
         return json.loads(STATE_PATH.read_text())
-    return {'posts': [], 'by_update': {}, 'by_message_hash': {}, 'last_success_by_room': {}}
+    return {
+        'posts': [],
+        'by_update': {},
+        'by_message_hash': {},
+        'last_success_by_room': {},
+        'last_attempt_by_update': {},
+        'last_attempt_by_message_hash': {},
+    }
 
 
 def save_state(state: dict):
@@ -74,6 +81,10 @@ def save_state(state: dict):
 
 def iso_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def stamp_now() -> str:
+    return datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 
 
 def parse_iso(ts: str | None):
@@ -129,8 +140,30 @@ def record_attempt(state: dict, room: str, update_path: pathlib.Path, msg_hash: 
         record.update(extra)
     state.setdefault('posts', []).append(record)
     state['posts'] = state['posts'][-200:]
-    state.setdefault('by_update', {})[str(update_path)] = {'status': status, 'at': ts, 'room': room, 'message_hash': msg_hash, **(extra or {})}
-    state.setdefault('by_message_hash', {})[msg_hash] = {'status': status, 'at': ts, 'room': room, 'update_path': str(update_path), **(extra or {})}
+
+    state.setdefault('last_attempt_by_update', {})[str(update_path)] = record
+    state.setdefault('last_attempt_by_message_hash', {})[msg_hash] = record
+
+    existing_update = (state.setdefault('by_update', {})).get(str(update_path))
+    if status == 'success' or not existing_update:
+        state['by_update'][str(update_path)] = {
+            'status': status,
+            'at': ts,
+            'room': room,
+            'message_hash': msg_hash,
+            **(extra or {}),
+        }
+
+    existing_message = (state.setdefault('by_message_hash', {})).get(msg_hash)
+    if status == 'success' or not existing_message:
+        state['by_message_hash'][msg_hash] = {
+            'status': status,
+            'at': ts,
+            'room': room,
+            'update_path': str(update_path),
+            **(extra or {}),
+        }
+
     if status == 'success':
         state.setdefault('last_success_by_room', {})[room] = ts
     save_state(state)
@@ -161,6 +194,7 @@ def main():
     state = load_state()
     guardrails = evaluate_publish_guardrails(state, args.room, update_path, post, args.cooldown_minutes)
     results = {
+        'attempt_at': iso_now(),
         'update_path': str(update_path),
         'room': args.room,
         'score': score,
@@ -174,7 +208,7 @@ def main():
     if score.get('recommendation') != 'autopublish' and not args.force:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         stem = update_path.stem
-        log = LOG_DIR / f'{stem}_{args.room}.json'
+        log = LOG_DIR / f'{stamp_now()}_{stem}_{args.room}.json'
         results['technocore_posted'] = {'skipped': True, 'reason': f"recommendation={score.get('recommendation')} score={score.get('total_score')}"}
         log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
         record_attempt(state, args.room, update_path, msg_hash, 'skipped_score', {'reason': results['technocore_posted']['reason']})
@@ -184,7 +218,7 @@ def main():
     if not guardrails['allowed'] and not args.force:
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         stem = update_path.stem
-        log = LOG_DIR / f'{stem}_{args.room}.json'
+        log = LOG_DIR / f'{stamp_now()}_{stem}_{args.room}.json'
         results['technocore_posted'] = {'skipped': True, 'reason': ','.join(guardrails['blockers'])}
         log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
         record_attempt(state, args.room, update_path, msg_hash, 'skipped_guardrails', {'reason': results['technocore_posted']['reason']})
