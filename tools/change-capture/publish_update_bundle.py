@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import json
 import pathlib
 import re
 import subprocess
@@ -8,6 +9,7 @@ from urllib.parse import quote
 
 REPO = pathlib.Path('/root/.hermes/document_cache/flop-technocore-probe-flipflopper')
 PUSH = REPO / 'tools' / 'change-capture' / 'push_repo_updates.py'
+SCORE = REPO / 'tools' / 'change-capture' / 'score_publication.py'
 AGENT = pathlib.Path('/root/.hermes/scripts/flipflopper_agent.py')
 LOG_DIR = pathlib.Path('/root/.hermes/document_cache/flop_publish_logs')
 GITHUB_BASE = 'https://github.com/Vacas-Coded/flop-technocore-probe-flipflopper/blob/main/'
@@ -48,6 +50,7 @@ def main():
     ap.add_argument('update_path')
     ap.add_argument('--room', default='technocore')
     ap.add_argument('--skip-github-push', action='store_true')
+    ap.add_argument('--force', action='store_true')
     args = ap.parse_args()
 
     update_path = pathlib.Path(args.update_path)
@@ -56,8 +59,23 @@ def main():
         raise SystemExit(2)
 
     data = parse_update(update_path)
+    s = run(['python', str(SCORE), str(update_path)])
+    if s.returncode != 0:
+        print(s.stdout)
+        print(s.stderr, file=sys.stderr)
+        raise SystemExit(s.returncode)
+    score = json.loads(s.stdout)
     post = build_post(data)
-    results = {'update_path': str(update_path), 'room': args.room, 'github_pushed': None, 'technocore_posted': None, 'message': post}
+    results = {'update_path': str(update_path), 'room': args.room, 'score': score, 'github_pushed': None, 'technocore_posted': None, 'message': post}
+
+    if score.get('recommendation') != 'autopublish' and not args.force:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        stem = update_path.stem
+        log = LOG_DIR / f'{stem}_{args.room}.json'
+        results['technocore_posted'] = {'skipped': True, 'reason': f"recommendation={score.get('recommendation')} score={score.get('total_score')}"}
+        log.write_text(json.dumps(results, indent=2, ensure_ascii=False) + '\n')
+        print(str(log))
+        return
 
     if not args.skip_github_push:
         p = run(['python', str(PUSH)])

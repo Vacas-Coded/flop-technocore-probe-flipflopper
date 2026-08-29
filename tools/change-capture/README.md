@@ -16,6 +16,9 @@ python record_project_update.py \
   --verified "Diff confirmed by watcher snapshot." \
   --evidence "/root/.hermes/document_cache/flop_watch/..."
 
+python score_publication.py docs/project-updates/<file>.md --pretty
 python push_repo_updates.py
 python publish_update_bundle.py docs/project-updates/<file>.md --room technocore
+# force publish if needed
+python publish_update_bundle.py docs/project-updates/<file>.md --room technocore --force
 ```
