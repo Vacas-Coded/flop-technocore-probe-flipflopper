@@ -60,6 +60,7 @@ That is exactly what this repo is for.
 - `tools/first-contact-runner/` — safe first-pass inspection for newly live testnet surfaces
 - `tools/activation-adapters/` — faucet / wallet / app-inference safe adapters for day-0 activation
 - `tools/day0-operations/` — evidence templates, decision trees, and packet generator for launch day
+- `tools/armed-runners/` — gated claim / wallet / docs runners for approved activation steps
 - `LICENSE` — MIT license
 
 ## Included tooling
@@ -112,6 +113,13 @@ That is exactly what this repo is for.
 - GET-only docs probe checklist
 - claim / wallet / docs decision trees
 - `generate_day0_packet.py` to materialize a timestamped local packet for a specific route
+
+### Armed runners
+`tools/armed-runners/` provides the final gated execution layer:
+- `claim_runner.py` blocks by default and only clears a manual-claim lane when preconditions pass
+- `wallet_connect_runner.py` blocks by default and only clears a manual-connect lane when preconditions pass
+- `docs_probe_runner.py` allows only GET-based probing when explicitly armed
+- `dispatch_armed_runner.py` routes to the correct gated runner
 
 ## Running the probe
 
