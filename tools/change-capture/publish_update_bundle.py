@@ -91,6 +91,18 @@ def main():
         print(t.stdout)
         print(t.stderr, file=sys.stderr)
         raise SystemExit(t.returncode)
+    try:
+        tech = json.loads(t.stdout)
+    except json.JSONDecodeError:
+        print(t.stdout)
+        print('invalid technocore publish response json', file=sys.stderr)
+        raise SystemExit(3)
+    post_status = ((tech.get('post') or {}).get('response') or [None])[0]
+    verify_status = ((tech.get('verify') or {}).get('response') or [None])[0]
+    if post_status != 200 or verify_status != 200:
+        print(t.stdout)
+        print(f'technocore publish not confirmed: post_status={post_status} verify_status={verify_status}', file=sys.stderr)
+        raise SystemExit(4)
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     stem = update_path.stem

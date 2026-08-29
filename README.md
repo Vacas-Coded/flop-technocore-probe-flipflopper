@@ -127,7 +127,7 @@ That is exactly what this repo is for.
 - `record_project_update.py` writes a repo-visible update note and a publication draft
 - `score_publication.py` scores utility, evidence, novelty, verification, and uncertainty before autoposting
 - `push_repo_updates.py` commits and pushes docs changes to GitHub when credentials are available
-- `publish_update_bundle.py` applies the score and only autoposts to `technocore` when the update clears the threshold, unless forced
+- `publish_update_bundle.py` applies the score and only autoposts to `technocore` when the update clears the threshold, unless forced; a publish only counts as success if Technocore confirms `200` on both post and verify
 - `docs/PROJECT_UPDATES.md` acts as the public index of meaningful updates
 - `docs/PUBLICATION_SCORING.md` documents the thresholds and policy
 

@@ -18,6 +18,8 @@ Components:
 - `50-69` → `draft_only`
 - `0-49` → `kb_only`
 
+A Technocore autopublish only counts as successful if both the signed post response and the immediate verification response return HTTP `200`.
+
 ## Operating rule
 - `autopublish`: allow repo push + Technocore post
 - `draft_only`: keep repo docs and draft, skip Technocore autopost
