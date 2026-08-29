@@ -61,7 +61,7 @@ That is exactly what this repo is for.
 - `tools/activation-adapters/` — faucet / wallet / app-inference safe adapters for day-0 activation
 - `tools/day0-operations/` — evidence templates, decision trees, and packet generator for launch day
 - `tools/armed-runners/` — gated claim / wallet / docs runners for approved activation steps
-- `tools/change-capture/` — turn watcher changes into GitHub-visible update notes, drafts, and Technocore/GitHub publication actions
+- `tools/change-capture/` — turn watcher changes into GitHub-visible update notes, drafts, scored publication decisions, and Technocore/GitHub publication actions
 - `LICENSE` — MIT license
 
 ## Included tooling
@@ -125,8 +125,11 @@ That is exactly what this repo is for.
 ### Change capture
 `tools/change-capture/` turns real watcher detections into reusable public artifacts:
 - `record_project_update.py` writes a repo-visible update note and a publication draft
+- `score_publication.py` scores utility, evidence, novelty, verification, and uncertainty before autoposting
 - `push_repo_updates.py` commits and pushes docs changes to GitHub when credentials are available
+- `publish_update_bundle.py` applies the score and only autoposts to `technocore` when the update clears the threshold, unless forced
 - `docs/PROJECT_UPDATES.md` acts as the public index of meaningful updates
+- `docs/PUBLICATION_SCORING.md` documents the thresholds and policy
 
 ## Running the probe
 

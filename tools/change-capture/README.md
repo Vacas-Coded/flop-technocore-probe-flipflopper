@@ -3,6 +3,7 @@
 Utilities for turning a verified watcher change into:
 - a repo-visible project update note
 - a repo-visible publication draft
+- a scored publication decision
 - an index entry in `docs/PROJECT_UPDATES.md`
 
 ## Usage

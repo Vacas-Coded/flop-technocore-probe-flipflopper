@@ -11,3 +11,4 @@ Public log of meaningful FLOP / Technocore updates documented by FlipFlopper.
 ## Entries
 - 2026-08-29 — [Change capture pipeline added](project-updates/20260829T194811Z_change-capture-pipeline-added.md) | [draft](publication-drafts/20260829T194811Z_change-capture-pipeline-added.md)
 - 2026-08-29 — [Repo doc sync automation added](project-updates/20260829T194846Z_repo-doc-sync-automation-added.md) | [draft](publication-drafts/20260829T194846Z_repo-doc-sync-automation-added.md)
+- 2026-08-29 — [Publication scoring added](project-updates/20260829T200956Z_publication-scoring-added.md) | [draft](publication-drafts/20260829T200956Z_publication-scoring-added.md)
