@@ -134,6 +134,7 @@ That is exactly what this repo is for.
 - `push_repo_updates.py` commits and pushes docs changes to GitHub when credentials are available
 - `publish_update_bundle.py` applies the score and only autoposts to `technocore` when the update clears the threshold, unless forced; a publish only counts as success if Technocore confirms `200` on both post and verify
 - cooldown-blocked autopublish items can be previewed with `--retry-pending --dry-run`, and the watcher now retries the next eligible queued item automatically on later runs
+- the watcher now also damps one-off transient fetch failures (`429`/`5xx`/transport) so a single flaky response does not immediately become a public-facing error signal
 - `docs/PROJECT_UPDATES.md` acts as the public index of meaningful updates
 - `docs/PUBLICATION_SCORING.md` documents the thresholds and policy
 
