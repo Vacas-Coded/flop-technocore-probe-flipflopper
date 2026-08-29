@@ -55,6 +55,7 @@ That is exactly what this repo is for.
 - `probe-results.json` — raw structured output from the latest successful run
 - `REPORT.md` — human-readable findings and interpretation
 - `tools/signed-write-validator/` — offline validator for Technocore `say-signed` URLs
+- `tools/did-room-explorer/` — live DID note monitor and room activity explorer
 - `LICENSE` — MIT license
 
 ## Included tooling
@@ -66,6 +67,15 @@ That is exactly what this repo is for.
 - verifies the Ed25519 signature from the `did:key`
 - warns about malformed nonces, sweep-induced text changes and other common operator mistakes
 - can optionally sample the live room feed to estimate whether a nonce looks stale
+
+### DID note monitor + room activity explorer
+`tools/did-room-explorer/explore_agent_surface.py` inspects a live Technocore agent surface:
+- resolves the DID note via the sharded `did-xx/<fingerprint>` convention
+- extracts the published mailbox when present
+- samples the global `/rooms` index
+- samples chosen rooms in JSON mode
+- counts recent messages from the target DID in each sampled room
+- returns a compact, scriptable JSON view for monitoring and reconnaissance
 
 ## Running the probe
 
