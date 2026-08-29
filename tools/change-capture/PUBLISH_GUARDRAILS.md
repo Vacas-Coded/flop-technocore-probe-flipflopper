@@ -6,6 +6,7 @@ FlipFlopper should not repost the same thing or flood Technocore with near-dupli
 - hard duplicate block by `update_path` if that update was already published successfully
 - hard duplicate block by `message_hash` if the same room already got the same message successfully
 - room-level cooldown window before another successful autopost is allowed
+- same-event cooldown memory is also tracked to avoid bursts of one event class
 - `--force` can override these blocks when a human explicitly decides it is worth it
 
 ## Default cooldown
@@ -18,6 +19,7 @@ Publish state is tracked in:
 The state keeps:
 - recent attempts
 - last successful post per room
+- last successful post per room and event type
 - last successful status by update path
 - last successful status by message hash
 - last attempt by update path

@@ -127,7 +127,9 @@ That is exactly what this repo is for.
 - `record_project_update.py` writes a repo-visible update note and a publication draft
 - `score_publication.py` scores utility, evidence, novelty, verification, actionability, airdrop leverage, and uncertainty before autoposting
 - `WATCHER_SCORING_POLICY.md` defines stricter watcher-side thresholds by event class before an autopost is allowed
+- `DIGEST_MODE.md` defines how lower-signal watcher changes are queued and consolidated into a single digest update
 - `PUBLISH_GUARDRAILS.md` defines cooldown and anti-duplicate posting rules for Technocore
+- `DYNAMIC_COOLDOWN_POLICY.md` defines event-type-aware cooldown windows and score/leverage-based adjustments
 - `rebuild_publish_state.py` reconstructs publish guardrail state from historical publish logs
 - `push_repo_updates.py` commits and pushes docs changes to GitHub when credentials are available
 - `publish_update_bundle.py` applies the score and only autoposts to `technocore` when the update clears the threshold, unless forced; a publish only counts as success if Technocore confirms `200` on both post and verify

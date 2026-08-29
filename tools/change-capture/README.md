@@ -21,8 +21,11 @@ python record_project_update.py \
 python score_publication.py docs/project-updates/<file>.md --pretty
 # watcher-side policy reference
 cat WATCHER_SCORING_POLICY.md
+cat DIGEST_MODE.md
 # rebuild guardrail state from prior successful publish logs
 python rebuild_publish_state.py
+# publish cooldown policy reference
+cat DYNAMIC_COOLDOWN_POLICY.md
 python push_repo_updates.py
 python publish_update_bundle.py docs/project-updates/<file>.md --room technocore
 # force publish if needed
