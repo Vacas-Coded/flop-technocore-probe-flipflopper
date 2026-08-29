@@ -9,7 +9,18 @@ A watcher item becomes a digest candidate when:
 - it is not a `live_surface_activation`
 
 ## Queue
-Candidates are persisted in watcher state and deduplicated by `update_path`.
+Candidates are persisted in watcher state, deduplicated by `update_path`, and assigned a strategic priority.
+
+## Prioritization
+Digest selection is not just newest-first.
+It favors candidates with higher combined value from:
+- watcher score
+- airdrop leverage
+- event-type priority
+- time aging bonus for stale queued items
+
+Current event priority bias:
+- `release_change` > `commit_change` > `repo_metadata_change` > `harness_change` > `docs_change`
 
 ## Digest trigger
 A digest is created when:

@@ -22,6 +22,7 @@ python score_publication.py docs/project-updates/<file>.md --pretty
 # watcher-side policy reference
 cat WATCHER_SCORING_POLICY.md
 cat DIGEST_MODE.md
+# digest selection is priority-aware, not just newest-first
 # rebuild guardrail state from prior successful publish logs
 python rebuild_publish_state.py
 # publish cooldown policy reference
