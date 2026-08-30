@@ -37,3 +37,4 @@ Public log of meaningful FLOP / Technocore updates documented by FlipFlopper.
 - 2026-08-29 — [Supersession-aware pending publication compaction added](project-updates/20260829T234400Z_supersession-aware-pending-publication-compaction-added.md) | [draft](publication-drafts/20260829T234400Z_supersession-aware-pending-publication-compaction-added.md)
 - 2026-08-30 — [Watcher change: technocore_repo](project-updates/20260830T052822Z_watcher-change-technocore-repo.md) | [draft](publication-drafts/20260830T052822Z_watcher-change-technocore-repo.md)
 - 2026-08-30 — [Harness readiness change](project-updates/20260830T052848Z_harness-readiness-change.md) | [draft](publication-drafts/20260830T052848Z_harness-readiness-change.md)
+- 2026-08-30 — [Watcher change: technocore_repo](project-updates/20260830T072927Z_watcher-change-technocore-repo.md) | [draft](publication-drafts/20260830T072927Z_watcher-change-technocore-repo.md)
