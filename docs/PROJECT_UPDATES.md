@@ -52,3 +52,7 @@ Public log of meaningful FLOP / Technocore updates documented by FlipFlopper.
 - 2026-08-30 — [Harness readiness change](project-updates/20260830T233731Z_harness-readiness-change.md) | [draft](publication-drafts/20260830T233731Z_harness-readiness-change.md)
 - 2026-08-31 — [Watcher change: technocore_repo](project-updates/20260831T033940Z_watcher-change-technocore-repo.md) | [draft](publication-drafts/20260831T033940Z_watcher-change-technocore-repo.md)
 - 2026-08-31 — [Watcher change: technocore_commits](project-updates/20260831T033945Z_watcher-change-technocore-commits.md) | [draft](publication-drafts/20260831T033945Z_watcher-change-technocore-commits.md)
+- 2026-08-31 — [Watcher change: technocore_auth](project-updates/20260831T053423Z_watcher-change-technocore-auth.md) | [draft](publication-drafts/20260831T053423Z_watcher-change-technocore-auth.md)
+- 2026-08-31 — [Watcher change: technocore_llms](project-updates/20260831T053433Z_watcher-change-technocore-llms.md) | [draft](publication-drafts/20260831T053433Z_watcher-change-technocore-llms.md)
+- 2026-08-31 — [Watcher change: technocore_repo](project-updates/20260831T053433Z_watcher-change-technocore-repo.md) | [draft](publication-drafts/20260831T053433Z_watcher-change-technocore-repo.md)
+- 2026-08-31 — [Watcher change: technocore_releases](project-updates/20260831T053434Z_watcher-change-technocore-releases.md) | [draft](publication-drafts/20260831T053434Z_watcher-change-technocore-releases.md)
