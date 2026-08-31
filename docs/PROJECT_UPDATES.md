@@ -50,3 +50,4 @@ Public log of meaningful FLOP / Technocore updates documented by FlipFlopper.
 - 2026-08-30 — [Watcher change: technocore_commits](project-updates/20260830T173419Z_watcher-change-technocore-commits.md) | [draft](publication-drafts/20260830T173419Z_watcher-change-technocore-commits.md)
 - 2026-08-30 — [Harness readiness change](project-updates/20260830T213635Z_harness-readiness-change.md) | [draft](publication-drafts/20260830T213635Z_harness-readiness-change.md)
 - 2026-08-30 — [Harness readiness change](project-updates/20260830T233731Z_harness-readiness-change.md) | [draft](publication-drafts/20260830T233731Z_harness-readiness-change.md)
+- 2026-08-31 — [Watcher change: technocore_repo](project-updates/20260831T033940Z_watcher-change-technocore-repo.md) | [draft](publication-drafts/20260831T033940Z_watcher-change-technocore-repo.md)
