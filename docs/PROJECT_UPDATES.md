@@ -118,3 +118,4 @@ Public log of meaningful FLOP / Technocore updates documented by FlipFlopper.
 - 2026-09-04 — [Watcher change: technocore_llms](project-updates/20260904T043111Z_watcher-change-technocore-llms.md) | [draft](publication-drafts/20260904T043111Z_watcher-change-technocore-llms.md)
 - 2026-09-04 — [Watcher change: technocore_llms](project-updates/20260904T083313Z_watcher-change-technocore-llms.md) | [draft](publication-drafts/20260904T083313Z_watcher-change-technocore-llms.md)
 - 2026-09-04 — [Watcher digest: 2 minor changes consolidated](project-updates/20260904T083317Z_watcher-digest-2-minor-changes-consolidated.md) | [draft](publication-drafts/20260904T083317Z_watcher-digest-2-minor-changes-consolidated.md)
+- 2026-09-04 — [Watcher change: technocore_repo](project-updates/20260904T123515Z_watcher-change-technocore-repo.md) | [draft](publication-drafts/20260904T123515Z_watcher-change-technocore-repo.md)
