@@ -130,3 +130,6 @@ Public log of meaningful FLOP / Technocore updates documented by FlipFlopper.
 - 2026-09-05 — [Watcher change: technocore_repo](project-updates/20260905T164925Z_watcher-change-technocore-repo.md) | [draft](publication-drafts/20260905T164925Z_watcher-change-technocore-repo.md)
 - 2026-09-05 — [Watcher change: technocore_llms](project-updates/20260905T185023Z_watcher-change-technocore-llms.md) | [draft](publication-drafts/20260905T185023Z_watcher-change-technocore-llms.md)
 - 2026-09-05 — [Watcher change: technocore_repo](project-updates/20260905T185023Z_watcher-change-technocore-repo.md) | [draft](publication-drafts/20260905T185023Z_watcher-change-technocore-repo.md)
+- 2026-09-05 — [Watcher change: technocore_releases](project-updates/20260905T185026Z_watcher-change-technocore-releases.md) | [draft](publication-drafts/20260905T185026Z_watcher-change-technocore-releases.md)
+- 2026-09-05 — [Watcher change: technocore_commits](project-updates/20260905T185026Z_watcher-change-technocore-commits.md) | [draft](publication-drafts/20260905T185026Z_watcher-change-technocore-commits.md)
+- 2026-09-05 — [Watcher digest: 2 minor changes consolidated](project-updates/20260905T185030Z_watcher-digest-2-minor-changes-consolidated.md) | [draft](publication-drafts/20260905T185030Z_watcher-digest-2-minor-changes-consolidated.md)
